@@ -1,0 +1,241 @@
+1. create a angular js proiect
+name: anugular-0firebase-project
+
+2. create a firebase project
+name: firebase-angularjs
+
+3. after creating firebase project click on the web sign and enter a nickname of your app
+
+firebase sdk script
+<!-- The core Firebase JS SDK is always required and must be listed first -->
+<script src="https://www.gstatic.com/firebasejs/7.17.1/firebase-app.js"></script>
+
+<!-- TODO: Add SDKs for Firebase products that you want to use
+     https://firebase.google.com/docs/web/setup#available-libraries -->
+
+<script>
+  // Your web app's Firebase configuration
+  var firebaseConfig = {
+    apiKey: "AIzaSyA2Iy41cvtHWFRsUozfnP5138kao8lD6UM",
+    authDomain: "fir-angularjs-3f7ee.firebaseapp.com",
+    databaseURL: "https://fir-angularjs-3f7ee.firebaseio.com",
+    projectId: "fir-angularjs-3f7ee",
+    storageBucket: "fir-angularjs-3f7ee.appspot.com",
+    messagingSenderId: "350633549120",
+    appId: "1:350633549120:web:7c356a4abb9b4d80f2eea5"
+  };
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+</script>
+
+4.create databse
+
+click database on left side bar
+create database and enter your database name
+
+5.install firebase in your application
+
+$ npm install --save firebase @angular/fire
+
+6. add in file src/environment/environment.ts
+
+firebase: {
+    apiKey: "YOUR_apiKey",
+    authDomain: "YOUR_authDomain",
+    databaseURL: "YOUR_databaseURL",
+    projectId: "YOUR_projectId",
+    storageBucket: "YOUR_storageBucket",
+    messagingSenderId: "YOUR_messagingSenderId"
+  }
+
+7. add inside app.module.ts
+
+import { AngularFireModule } from '@angular/fire';
+import { AngularFireDatabaseModule } from '@angular/fire/database';
+import { environment } from '../environments/environment';
+import { AngularFirestoreModule } from '@angular/fire/firestore';
+
+and inside imports
+
+AngularFireModule.initializeApp(environment.firebase),
+    AngularFirestoreModule,
+    AngularFireDatabaseModule
+
+8. create a service inside the project
+
+create_NewStudent: Create a new record in the specified collection using add method
+read_Students: Call snapshotChanges method which will get records and also subscribe it to get updates
+update_Student: Update record by taking ID then calling update method
+delete_Student: Call delete method by taking record id
+
+
+add this code inside ur service class
+import { Injectable } from '@angular/core';
+
+import { AngularFirestore } from '@angular/fire/firestore';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class CrudService {
+
+  constructor(
+    private firestore: AngularFirestore
+  ) { }
+
+
+  create_NewStudent(record) {
+    return this.firestore.collection('Students').add(record);
+  }
+
+  read_Students() {
+    return this.firestore.collection('Students').snapshotChanges();
+  }
+
+  update_Student(recordID,record){
+    this.firestore.doc('Students/' + recordID).update(record);
+  }
+
+  delete_Student(record_id) {
+    this.firestore.doc('Students/' + record_id).delete();
+  }
+}
+
+9. Add code into app.component.html
+
+<!--The content below is only a placeholder and can be replaced.-->
+<div class="container">
+
+  <h1 style="margin-top: 25px;">
+    {{title}}
+  </h1>
+
+  <div class="row" style="margin-top: 25px;">
+    <div class="col-md-3">
+      <input type="text" class="form-control" [(ngModel)]="studentName" placeholder="Name">
+    </div>
+    <div class="col-md-3">
+      <input type="text" class="form-control" [(ngModel)]="studentAge" placeholder="Age">
+    </div>
+    <div class="col-md-3">
+      <input type="text" class="form-control" [(ngModel)]="studentAddress" placeholder="Address">
+    </div>
+    <div class="col-md-3">
+      <button type="button" (click)="CreateRecord()" [disabled]="!studentName || !studentAge || !studentAddress" class="btn btn-primary">+
+        Create Student</button>
+    </div>
+  </div>
+  <div class="row" style="margin-top: 25px;">
+    <div class="col-md-3">
+      <div class="card" style="width: 18rem;" *ngFor="let item of students">
+        <div class="card-body" *ngIf="!item.isEdit; else elseBlock">
+          <h5 class="card-title">{{item.Name}}</h5>
+          <h6 class="card-subtitle mb-2 text-muted">Age: {{item.Age}} Years</h6>
+          <p class="card-text">Address: {{item.Address}}</p>
+          <a href="#" class="card-link" (click)="EditRecord(item)">Edit</a>
+          <a href="#" class="card-link" (click)="RemoveRecord(item.id)">Delete</a>
+        </div>
+        <ng-template #elseBlock>
+          <div class="card-body">
+            <h5 class="card-title">Edit</h5>
+            <div class="form-group">
+              <div class="row">
+                <div class="col-md-12">
+                  <input type="text" class="form-control" [(ngModel)]="item.EditName" placeholder="Edit Name">
+                </div>
+                <div class="col-md-12">
+                  <input type="text" class="form-control" [(ngModel)]="item.EditAge" placeholder="Edit Age">
+                </div>
+                <div class="col-md-12">
+                  <input type="text" class="form-control" [(ngModel)]="item.EditAddress" placeholder="Edit Address">
+                </div>
+              </div>
+            </div>
+
+            <a href="#" class="card-link" (click)="item.isEdit = false">Cancel</a>
+            <a href="#" class="card-link" (click)="UpdateRecord(item)">Update</a>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+
+
+</div>
+
+
+10. add code into app.component.ts
+import { Component, OnInit } from '@angular/core';
+
+import { CrudService } from './service/crud.service';
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.scss']
+})
+export class AppComponent  implements OnInit {
+  title = 'Firestore CRUD Operations Students App';
+
+  students: any;
+  studentName: string;
+  studentAge: number;
+  studentAddress: string;
+
+  constructor(private crudService: CrudService) { }
+
+  ngOnInit() {
+    this.crudService.read_Students().subscribe(data => {
+
+      this.students = data.map(e => {
+        return {
+          id: e.payload.doc.id,
+          isEdit: false,
+          Name: e.payload.doc.data()['Name'],
+          Age: e.payload.doc.data()['Age'],
+          Address: e.payload.doc.data()['Address'],
+        };
+      })
+      console.log(this.students);
+
+    });
+  }
+
+  CreateRecord() {
+    let record = {};
+    record['Name'] = this.studentName;
+    record['Age'] = this.studentAge;
+    record['Address'] = this.studentAddress;
+    this.crudService.create_NewStudent(record).then(resp => {
+      this.studentName = "";
+      this.studentAge = undefined;
+      this.studentAddress = "";
+      console.log(resp);
+    })
+      .catch(error => {
+        console.log(error);
+      });
+  }
+
+  RemoveRecord(rowID) {
+    this.crudService.delete_Student(rowID);
+  }
+
+  EditRecord(record) {
+    record.isEdit = true;
+    record.EditName = record.Name;
+    record.EditAge = record.Age;
+    record.EditAddress = record.Address;
+  }
+
+  UpdateRecord(recordRow) {
+    let record = {};
+    record['Name'] = recordRow.EditName;
+    record['Age'] = recordRow.EditAge;
+    record['Address'] = recordRow.EditAddress;
+    this.crudService.update_Student(recordRow.id, record);
+    recordRow.isEdit = false;
+  }
+
+}
+
